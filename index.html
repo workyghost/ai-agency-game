@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agency Tycoon</title>
+    <!-- Google Fonts for retro/cyberpunk typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Fira+Code:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="crt-effects">
+    <!-- CRT & Scanline Effects -->
+    <div class="scanlines"></div>
+    <div class="crt-glow"></div>
+    
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <span class="logo-neon-blue">AI</span><span class="logo-neon-green">_AGENCY</span><span class="logo-sub">_TYCOON v1.0.0</span>
+            </div>
+            <div class="header-status">
+                <span class="status-indicator online"></span>
+                <span class="status-text">SYSTEMS ONLINE</span>
+                <button id="toggle-crt-btn" class="text-btn" style="margin-left: 10px;">CRT_OFF()</button>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <main class="workspace-grid">
+            
+            <!-- LEFT PANEL: Dashboard & Metrics -->
+            <section class="dashboard-panel glass-card">
+                <div class="panel-header">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <h2>AGENCY_METRICS.LOG</h2>
+                </div>
+                
+                <div class="panel-content">
+                    <!-- Core Stats Grid -->
+                    <div class="metrics-grid">
+                        <div class="metric-card level-card">
+                            <span class="metric-label">RANK / LEVEL</span>
+                            <span class="metric-value text-glow-blue" id="agency-level">00</span>
+                            <span class="metric-sub" id="agency-title">Pre-Launch Rookie</span>
+                        </div>
+                        
+                        <div class="metric-card mrr-card">
+                            <span class="metric-label">MONTHLY RECURRING REVENUE</span>
+                            <span class="metric-value text-glow-green" id="mrr-usd">$0</span>
+                            <span class="metric-sub" id="mrr-tl">0 ₺</span>
+                        </div>
+
+                        <div class="metric-card cash-card">
+                            <span class="metric-label">CASH RESERVES</span>
+                            <span class="metric-value text-glow-blue" id="cash-reserve">$0</span>
+                            <span class="metric-sub" id="cash-burn-rate">Burn: -$0/mo</span>
+                        </div>
+
+                        <div class="metric-card hours-card">
+                            <span class="metric-label">WEEKLY WORKLOAD</span>
+                            <span class="metric-value text-glow-yellow" id="weekly-hours">0h</span>
+                            <span class="metric-sub">Max Capacity: 40h</span>
+                        </div>
+                    </div>
+
+                    <!-- Burnout Status -->
+                    <div class="burnout-container">
+                        <div class="burnout-header">
+                            <span class="burnout-label"><i class="fa-solid fa-heart-pulse"></i> BURNOUT STATUS</span>
+                            <span class="burnout-value" id="burnout-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="burnout-bar" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Client Segments -->
+                    <div class="clients-container">
+                        <h3><i class="fa-solid fa-users"></i> ACTIVE CLIENTS</h3>
+                        <div class="clients-grid">
+                            <div class="client-stat-card">
+                                <span class="client-type label-tr">TR</span>
+                                <span class="client-count" id="clients-tr">0</span>
+                                <span class="client-label">Domestic</span>
+                            </div>
+                            <div class="client-stat-card">
+                                <span class="client-type label-int-std">INT STD</span>
+                                <span class="client-count" id="clients-int-std">0</span>
+                                <span class="client-label">Global Standard</span>
+                            </div>
+                            <div class="client-stat-card">
+                                <span class="client-type label-int-prem">INT PREM</span>
+                                <span class="client-count" id="clients-int-prem">0</span>
+                                <span class="client-label">Global Premium</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Badges / Achievements Grid -->
+                    <div class="badges-container">
+                        <div class="badges-header">
+                            <h3><i class="fa-solid fa-award"></i> SYSTEM_BADGES.EXE</h3>
+                            <button id="view-all-badges-btn" class="text-btn">VIEW_ALL()</button>
+                        </div>
+                        <div class="badges-mini-grid" id="badges-grid">
+                            <!-- Placeholder slots for badges. JavaScript can populate these with actual achievements. -->
+                            <div class="badge-slot empty" title="Locked Achievement"><i class="fa-solid fa-lock"></i></div>
+                            <div class="badge-slot empty" title="Locked Achievement"><i class="fa-solid fa-lock"></i></div>
+                            <div class="badge-slot empty" title="Locked Achievement"><i class="fa-solid fa-lock"></i></div>
+                            <div class="badge-slot empty" title="Locked Achievement"><i class="fa-solid fa-lock"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- RIGHT PANEL: CLI Terminal -->
+            <section class="terminal-panel glass-card">
+                <div class="panel-header terminal-header">
+                    <div class="terminal-header-title">
+                        <i class="fa-solid fa-terminal"></i>
+                        <span>AI-AGENCY-SHELL v1.0.4 - ACTIVE_SESSION</span>
+                    </div>
+                    <div class="terminal-controls">
+                        <span class="control-dot red"></span>
+                        <span class="control-dot yellow"></span>
+                        <span class="control-dot green"></span>
+                    </div>
+                </div>
+                
+                <div class="terminal-body" id="terminal-body">
+                    <!-- Historical/welcome log output -->
+                    <div class="terminal-output" id="terminal-output">
+                        <div class="log-line system-msg">Initializing core subroutines...</div>
+                        <div class="log-line system-msg">Loading AI Agency Tycoon interface...</div>
+                        <div class="log-line success-msg">Connection established securely.</div>
+                        <div class="log-line">Type <span class="cmd-highlight">help</span> to list available operations.</div>
+                        <div class="log-line mt-1"></div>
+                    </div>
+                    
+                    <!-- Command input prompt line -->
+                    <div class="terminal-input-line">
+                        <span class="terminal-prompt">guest@ai-agency:~$</span>
+                        <input type="text" id="terminal-input" autocomplete="off" autofocus spellcheck="false">
+                    </div>
+                </div>
+            </section>
+
+        </main>
+        
+        <!-- Footer -->
+        <footer class="app-footer">
+            <span class="footer-item">STATUS: <span class="glow-text-green">READY</span></span>
+            <span class="footer-item">SESSION_TIME: <span id="session-time">00:00:00</span></span>
+            <span class="footer-item">SYS_MEM: <span class="glow-text-blue">94% FREE</span></span>
+        </footer>
+    </div>
+
+    <!-- LEVEL UP OVERLAY MODAL -->
+    <div id="level-up-modal" class="modal-overlay">
+        <div class="modal-content level-up-content glass-card animate-glitch-in">
+            <div class="glitch-title" data-text="LEVEL UP!">LEVEL UP!</div>
+            <div class="level-up-badge">
+                <span id="modal-level-num">02</span>
+            </div>
+            <div class="level-up-details">
+                <h3 id="modal-level-title">PRO AGENT</h3>
+                <p class="subtitle">Your agency credentials have been upgraded.</p>
+                <div class="perks-list">
+                    <h4>UNLOCKED PERKS:</h4>
+                    <ul id="unlocked-perks-list">
+                        <li><i class="fa-solid fa-circle-check text-glow-green"></i> Unlocked international standard clients.</li>
+                        <li><i class="fa-solid fa-circle-check text-glow-green"></i> Maximum weekly capacity increased.</li>
+                    </ul>
+                </div>
+            </div>
+            <button id="level-up-close-btn" class="cyber-btn">ACKNOWLEDGE</button>
+        </div>
+    </div>
+
+    <!-- BADGES DETAIL MODAL -->
+    <div id="badges-modal" class="modal-overlay">
+        <div class="modal-content badges-modal-content glass-card">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-award"></i> ACHIEVEMENT_LOG.DB</h2>
+                <button id="badges-modal-close" class="close-btn">&times;</button>
+            </div>
+            <div class="badges-full-grid" id="badges-full-grid">
+                <!-- Badges will be generated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- External Game Logic Scripts -->
+    <script src="content.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
