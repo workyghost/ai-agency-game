@@ -259,6 +259,17 @@ class TerminalManager {
       return;
     }
 
+    // Play retro chime sound when starting to print success or error lines
+    if (typeof audioManager !== 'undefined') {
+      if (type === 'success' || type === 'success-msg') {
+        audioManager.playSFX('success');
+      } else if (type === 'error' || type === 'error-msg') {
+        audioManager.playSFX('error');
+      } else if (type === 'dialogue' || type === 'dialogue-msg') {
+        audioManager.playSFX('click');
+      }
+    }
+
     const line = document.createElement('div');
     line.className = `log-line ${type}-msg`;
     if (type === 'input') {
@@ -274,8 +285,15 @@ class TerminalManager {
 
     // Typewriter effect character by character
     for (let i = 0; i < text.length; i++) {
-      line.textContent += text.charAt(i);
+      const char = text.charAt(i);
+      line.textContent += char;
       this.container.scrollTop = this.container.scrollHeight;
+      
+      // Play retro mechanical keyboard click for letters, numbers, and common shell symbols
+      if (typeof audioManager !== 'undefined' && /[a-zA-Z0-9_$#@\-]/.test(char)) {
+        audioManager.playSFX('type');
+      }
+      
       await new Promise(r => setTimeout(r, this.speed));
     }
 
@@ -389,6 +407,9 @@ function unlockBadge(badgeId) {
   document.body.appendChild(toast);
 
   // Trigger sound effect or visually blink screen
+  if (typeof audioManager !== 'undefined') {
+    audioManager.playSFX('levelUp');
+  }
   const consoleEl = document.querySelector('.terminal-panel');
   if (consoleEl) {
     consoleEl.classList.add('badge-flash');
@@ -619,6 +640,9 @@ function updateFullBadgesGrid() {
 
 // Open Level Up Screen Overlay
 function showLevelUpModal(lvl) {
+  if (typeof audioManager !== 'undefined') {
+    audioManager.playSFX('levelUp');
+  }
   const modal = document.getElementById('level-up-modal');
   const modalLvlNum = document.getElementById('modal-level-num');
   const modalLvlTitle = document.getElementById('modal-level-title');
@@ -884,6 +908,9 @@ async function sendOutboundCommand(args) {
     return;
   }
 
+  if (typeof audioManager !== 'undefined') {
+    audioManager.playSFX('outbound');
+  }
   state.cash -= cost;
   state.outboundSentThisMonth = true;
 
@@ -1281,6 +1308,9 @@ async function handleDemoCallDialogue(input) {
         const prices = state.currentNiche ? niches[state.currentNiche].prices : niches['local-service'].prices;
         const gainedRevenue = prices[state.demoCallClientType];
         await term.print(`Yeni Müşteri Edinildi! Aylık Gelir: +$${gainedRevenue.toLocaleString()} eklendi.`, "success");
+        if (typeof audioManager !== 'undefined') {
+          audioManager.playSFX('dealClose');
+        }
         triggerConfetti();
         
         const totalClients = 
@@ -1332,6 +1362,9 @@ async function handleDemoCallDialogue(input) {
         const prices = state.currentNiche ? niches[state.currentNiche].prices : niches['local-service'].prices;
         const gainedRevenue = prices[state.demoCallClientType];
         await term.print(`Yeni Müşteri Edinildi! Aylık Gelir: +$${gainedRevenue.toLocaleString()} eklendi.`, "success");
+        if (typeof audioManager !== 'undefined') {
+          audioManager.playSFX('dealClose');
+        }
         triggerConfetti();
         
         const totalClients = 
@@ -1405,6 +1438,60 @@ function disableInput() {
 window.addEventListener('DOMContentLoaded', () => {
   // Initialize Terminal
   term = new TerminalManager('terminal-output');
+
+  // Initialize AudioManager Visualizer and Button Controllers
+  if (typeof audioManager !== 'undefined') {
+    audioManager.setVisualizer('audio-viz');
+
+    // BGM Toggle button logic
+    const toggleMusicBtn = document.getElementById('toggle-music-btn');
+    if (toggleMusicBtn) {
+      toggleMusicBtn.addEventListener('click', () => {
+        audioManager.resume();
+        audioManager.musicEnabled = !audioManager.musicEnabled;
+        if (audioManager.musicEnabled) {
+          toggleMusicBtn.innerHTML = '<i class="fa-solid fa-music"></i> BGM_ON()';
+          toggleMusicBtn.style.color = 'var(--neon-green)';
+          toggleMusicBtn.style.textShadow = 'var(--glow-green)';
+          audioManager.startMusic();
+        } else {
+          toggleMusicBtn.innerHTML = '<i class="fa-solid fa-music"></i> BGM_OFF()';
+          toggleMusicBtn.style.color = 'var(--neon-blue)';
+          toggleMusicBtn.style.textShadow = 'none';
+          audioManager.stopMusic();
+        }
+        audioManager.playSFX('click');
+      });
+    }
+
+    // SFX Toggle button logic
+    const toggleSfxBtn = document.getElementById('toggle-sfx-btn');
+    if (toggleSfxBtn) {
+      toggleSfxBtn.addEventListener('click', () => {
+        audioManager.resume();
+        audioManager.sfxEnabled = !audioManager.sfxEnabled;
+        if (audioManager.sfxEnabled) {
+          toggleSfxBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i> SFX_ON()';
+          toggleSfxBtn.style.color = 'var(--neon-green)';
+          toggleSfxBtn.style.textShadow = 'var(--glow-green)';
+        } else {
+          toggleSfxBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> SFX_OFF()';
+          toggleSfxBtn.style.color = 'var(--neon-blue)';
+          toggleSfxBtn.style.textShadow = 'none';
+        }
+        audioManager.playSFX('click');
+      });
+    }
+
+    // Resume audio context on any user click or key press to bypass browser autoplay protections
+    const resumeAudio = () => {
+      audioManager.resume();
+      document.removeEventListener('click', resumeAudio);
+      document.removeEventListener('keydown', resumeAudio);
+    };
+    document.addEventListener('click', resumeAudio);
+    document.addEventListener('keydown', resumeAudio);
+  }
 
   // Inject Badge notification styles dynamically if not present
   const style = document.createElement('style');

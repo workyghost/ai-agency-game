@@ -815,6 +815,37 @@ body {
     background: rgba(0, 255, 102, 0.05);
 }
 
+/* AUDIO CONTROLS & VISUALIZER */
+.audio-controls-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 12px;
+    border-left: 1px dashed var(--border-blue);
+    padding-left: 12px;
+}
+
+#audio-viz {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 2px;
+    vertical-align: middle;
+    box-shadow: 0 0 5px rgba(0, 229, 255, 0.1);
+    image-rendering: pixelated;
+}
+
+.audio-controls-wrapper .text-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.25s ease;
+}
+
+.audio-controls-wrapper .text-btn i {
+    font-size: 0.75rem;
+}
+
+
 .cyber-btn {
     background: transparent;
     border: 1px solid var(--neon-yellow);

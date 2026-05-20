@@ -32,6 +32,11 @@
                 <span class="status-indicator online"></span>
                 <span class="status-text">SYSTEMS ONLINE</span>
                 <button id="toggle-crt-btn" class="text-btn" style="margin-left: 10px;">CRT_OFF()</button>
+                <div class="audio-controls-wrapper">
+                    <canvas id="audio-viz" width="60" height="20" title="Ses Spektrumu"></canvas>
+                    <button id="toggle-music-btn" class="text-btn" title="Müzik Aç/Kapat (BGM)"><i class="fa-solid fa-music"></i> BGM_OFF()</button>
+                    <button id="toggle-sfx-btn" class="text-btn" title="Efekt Sesleri Aç/Kapat (SFX)"><i class="fa-solid fa-volume-high"></i> SFX_ON()</button>
+                </div>
             </div>
         </header>
 
@@ -201,6 +206,7 @@
     </div>
 
     <!-- External Game Logic Scripts -->
+    <script src="audio.js"></script>
     <script src="content.js"></script>
     <script src="app.js"></script>
 </body>
