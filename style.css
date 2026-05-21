@@ -912,14 +912,211 @@ body {
         height: auto;
         overflow-y: auto;
     }
-    
+
     body {
         overflow-y: auto;
     }
-    
+
     .app-container {
         height: auto;
         min-height: 100vh;
         overflow-y: auto;
     }
+}
+
+/* ===== PROGRESS RAIL ===== */
+.progress-rail {
+  display: flex;
+  align-items: center;
+  padding: 8px 24px;
+  background: rgba(0, 229, 255, 0.02);
+  border-bottom: 1px solid var(--border-blue);
+  gap: 0;
+  overflow-x: auto;
+}
+
+.rail-node {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 229, 255, 0.3);
+  background: var(--bg-dark);
+  flex-shrink: 0;
+  cursor: default;
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.rail-node::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.9);
+  color: var(--neon-blue);
+  font-size: 0.65rem;
+  padding: 3px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  border: 1px solid var(--border-blue);
+}
+
+.rail-node:hover::after {
+  opacity: 1;
+}
+
+.rail-node.completed {
+  background: var(--neon-green);
+  border-color: var(--neon-green);
+  box-shadow: 0 0 10px var(--neon-green);
+}
+
+.rail-node.active {
+  background: var(--neon-yellow);
+  border-color: var(--neon-yellow);
+  box-shadow: 0 0 14px var(--neon-yellow);
+  animation: rail-active-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes rail-active-pulse {
+  0%, 100% { box-shadow: 0 0 6px var(--neon-yellow); }
+  50% { box-shadow: 0 0 18px var(--neon-yellow); }
+}
+
+.rail-step {
+  flex: 1;
+  height: 3px;
+  background: rgba(0, 229, 255, 0.1);
+  transition: background 0.5s ease;
+  min-width: 20px;
+}
+
+.rail-step.completed {
+  background: var(--neon-green);
+  box-shadow: 0 0 4px var(--neon-green);
+}
+
+/* ===== OBJECTIVE HUD ===== */
+.objective-bar {
+  background: rgba(255, 183, 0, 0.04);
+  border: 1px solid rgba(255, 183, 0, 0.25);
+  border-radius: 4px;
+  padding: 8px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.objective-label {
+  color: var(--neon-yellow);
+  font-size: 0.68rem;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.objective-text {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+/* ===== GAME OVER MODAL ===== */
+#game-over-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(0px);
+  align-items: center;
+  justify-content: center;
+}
+
+#game-over-modal.active {
+  display: flex;
+  animation: game-over-enter 0.5s ease forwards;
+}
+
+@keyframes game-over-enter {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(12px);
+  }
+}
+
+#game-over-restart-btn {
+  border-color: var(--neon-pink);
+  color: var(--neon-pink);
+}
+
+#game-over-restart-btn:hover {
+  background: rgba(255, 42, 95, 0.1);
+  box-shadow: 0 0 15px rgba(255, 42, 95, 0.4);
+}
+
+/* ===== DEMO MODE PROMPT ===== */
+.terminal-prompt.dialogue-mode {
+  color: var(--neon-yellow) !important;
+  text-shadow: 0 0 8px var(--neon-yellow);
+  transition: color 0.3s ease;
+}
+
+.terminal-prompt.dialogue-mode::before {
+  content: "[GÖRÜŞME] ";
+  font-size: 0.7rem;
+  opacity: 0.8;
+  letter-spacing: 1px;
+}
+
+.terminal-input-line.dialogue-active {
+  border-top-color: rgba(255, 183, 0, 0.35) !important;
+  background: rgba(255, 183, 0, 0.025) !important;
+  transition: all 0.3s ease;
+}
+
+/* ===== BADGE FULL GRID FIX ===== */
+.badge-full-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  background: rgba(0, 229, 255, 0.03);
+  transition: all 0.3s ease;
+  cursor: default;
+  text-align: center;
+}
+
+.badge-full-item.locked {
+  opacity: 0.3;
+  filter: grayscale(100%);
+}
+
+.badge-full-item.unlocked {
+  border-color: var(--neon-green);
+  background: rgba(0, 255, 102, 0.05);
+  box-shadow: 0 0 8px rgba(0, 255, 102, 0.2);
+}
+
+.badge-full-item .badge-icon-large {
+  font-size: 1.6rem;
+}
+
+.badge-full-item .badge-name-text {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
 }

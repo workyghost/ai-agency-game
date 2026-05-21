@@ -537,5 +537,204 @@ Best,
         message: "Görüşme başarısızlıkla sonuçlandı. Yanlış iletişim, belirsiz fiyat veya kaba yaklaşımlar nedeniyle müşteri masadan kalktı. Framework kurallarına sadık kalarak tekrar deneyin!"
       }
     }
+  },
+
+  // 5. REFERRAL CONFIG
+  referralConfig: {
+    baseChancePerClient: 0.03, // Her müşteri için aylık %3 referral şansı
+    message_tr: '📣 Referral: Mevcut müşteriniz sizi bir iş arkadaşına önerdi! Yeni demo eklendi.',
+    message_en: '📣 Referral: An existing client referred you to a colleague! New demo added.'
   }
 };
+
+// 6. ENGLISH DEMO CALL DIALOG TREE
+const demoCallDialogEN = {
+  title: "15-Minute Demo Call Sales Simulation",
+  description: "Your standard 15-minute discovery and sales call with prospects. Following the right steps closes the deal; wrong moves (discounting too early, skipping discovery, or being generic) lose the client.",
+  startNode: "greeting",
+  nodes: {
+    // PHASE 1: GREETING
+    greeting: {
+      phase: "1. Opening & Context (0-2 min)",
+      customerStatement: "Hello, I came across your profile. I'm curious about how AI could help my business.",
+      choices: [
+        {
+          text: "Great to meet you! Could you tell me a bit about your business and your biggest challenge right now?",
+          score: 10,
+          nextNode: "discovery",
+          feedback: "Perfect opening! Discovery-first approach builds trust."
+        },
+        {
+          text: "We use the latest AI tools for social media management. Our clients see 40% growth on average.",
+          score: 5,
+          nextNode: "discovery",
+          feedback: "Jumping straight to pitch. Better to listen first."
+        },
+        {
+          text: "We offer packages starting from $500/month. Interested?",
+          score: -5,
+          nextNode: "fail_node",
+          feedback: "Price before value — classic mistake. Client hung up."
+        }
+      ]
+    },
+
+    // PHASE 2: DISCOVERY
+    discovery: {
+      phase: "2. Discovery (2-5 min)",
+      customerStatement: "Actually, we struggle with consistent social media content. We're a local dental clinic with 8 staff.",
+      choices: [
+        {
+          text: "Interesting! What's your current posting frequency, and who manages your social media now?",
+          score: 10,
+          nextNode: "solution",
+          feedback: "Excellent! Deeper discovery reveals real pain points."
+        },
+        {
+          text: "I see. We can definitely help with that.",
+          score: 5,
+          nextNode: "solution",
+          feedback: "Too vague. Keep digging."
+        },
+        {
+          text: "We handle all kinds of businesses. Let me send you our full catalog.",
+          score: -5,
+          nextNode: "fail_node",
+          feedback: "Generic response — not tailored. Client lost interest."
+        }
+      ]
+    },
+
+    // PHASE 3: SOLUTION
+    solution: {
+      phase: "3. Solution Presentation (5-9 min)",
+      customerStatement: "I see. So what exactly would you do for a dental clinic?",
+      choices: [
+        {
+          text: "We'd create patient education content, before/after case studies (anonymized), and local community posts — all with your clinic's voice and brand.",
+          score: 10,
+          nextNode: "pricing",
+          feedback: "Specific, niche-relevant! This is how you win."
+        },
+        {
+          text: "We'd manage all your social media channels professionally.",
+          score: 5,
+          nextNode: "pricing",
+          feedback: "Decent, but lacks specificity for their niche."
+        },
+        {
+          text: "We do everything — posts, stories, reels, SEO, ads...",
+          score: -5,
+          nextNode: "fail_node",
+          feedback: "Feature dump. Client is overwhelmed."
+        }
+      ]
+    },
+
+    // PHASE 4: PRICING
+    pricing: {
+      phase: "4. Pricing & Guarantee (9-12 min)",
+      customerStatement: "That sounds relevant. What are your fees?",
+      choices: [
+        {
+          text: "Our standard package is $1,500/month, which includes 20 posts, monthly analytics, and a dedicated account manager. But first — what's your current monthly marketing budget?",
+          score: 10,
+          nextNode: "objection",
+          feedback: "Smart! Anchor with value, then qualify their budget."
+        },
+        {
+          text: "We have packages ranging from $800 to $2,000 per month.",
+          score: 5,
+          nextNode: "objection",
+          feedback: "Range given without context. Neutral."
+        },
+        {
+          text: "It depends. Could be $500, could be $3,000. We'll figure it out.",
+          score: -5,
+          nextNode: "fail_node",
+          feedback: "Vague pricing destroys trust. Client declined."
+        }
+      ]
+    },
+
+    // PHASE 5: OBJECTION HANDLING
+    objection: {
+      phase: "5. Objection Handling & Close (12-15 min)",
+      customerStatement: "Hmm, $1,500 is a bit steep. I need to discuss this with my business partner.",
+      choices: [
+        {
+          text: "Totally understand — this is a team decision. How about I join your next call with your partner? I can answer any technical or strategic questions directly.",
+          score: 15,
+          nextNode: "success_node",
+          feedback: "Brilliant! Accessing the decision maker is the winning move."
+        },
+        {
+          text: "Of course, take your time. I'll follow up next week.",
+          score: 5,
+          nextNode: "average_node",
+          feedback: "Acceptable, but passive. You left it in their hands."
+        },
+        {
+          text: "No problem, I can drop to $1,200 if that helps.",
+          score: -10,
+          nextNode: "fail_node",
+          feedback: "Instant discount signals weak positioning. Client sensed desperation."
+        }
+      ]
+    },
+
+    // END NODES
+    success_node: {
+      isEnd: true,
+      result: "win",
+      message: "🎉 Deal closed! New client secured. Excellent work on handling objections professionally."
+    },
+    average_node: {
+      isEnd: true,
+      result: "average",
+      message: "⚡ Promising conversation. Client is interested but undecided. Follow up in 3 days."
+    },
+    fail_node: {
+      isEnd: true,
+      result: "fail",
+      message: "📵 Call ended early. The client wasn't convinced. Analyze what went wrong and try again."
+    }
+  }
+};
+
+// 7. CLIENT PERSONA ARCHETYPES
+const clientPersonas = {
+  price_focused: {
+    id: 'price_focused',
+    hint: 'Fiyat odaklı — İlk önce fiyat sorar, bütçe kısıtlıdır',
+    hintEN: 'Price-sensitive — Will ask about cost early, budget-conscious',
+    startingNode: 'pricing', // direkt fiyat aşamasına git
+    churnRisk: 0.15 // bu tip müşteri daha kolay ayrılır
+  },
+  trust_focused: {
+    id: 'trust_focused',
+    hint: 'Güven odaklı — Garanti ve referans ister, karar yavaş',
+    hintEN: 'Trust-first — Wants guarantees and case studies, slow to decide',
+    startingNode: 'greeting',
+    churnRisk: 0.05 // güven kurulunca sadık kalır
+  },
+  busy_founder: {
+    id: 'busy_founder',
+    hint: 'Meşgul kurucu — Zamanı yok, 5 dakikada karar ister',
+    hintEN: 'Time-crunched founder — No patience for long calls, wants quick answers',
+    startingNode: 'greeting',
+    churnRisk: 0.10
+  },
+  detail_oriented: {
+    id: 'detail_oriented',
+    hint: 'Detay canavarı — Her şeyi sorar, ikna edilmesi uzun sürer',
+    hintEN: 'Detail-obsessed — Asks everything, needs thorough answers',
+    startingNode: 'discovery',
+    churnRisk: 0.08
+  }
+};
+
+// Export new objects onto GAME_CONTENT
+window.GAME_CONTENT.demoCallDialogEN = demoCallDialogEN;
+window.GAME_CONTENT.clientPersonas = clientPersonas;
+window.GAME_CONTENT.referralConfig = window.GAME_CONTENT.referralConfig; // already set above

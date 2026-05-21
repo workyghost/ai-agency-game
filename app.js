@@ -145,14 +145,26 @@ const BADGES = {
   'retention_pro': { name: "Tutundurma Uzmanı", desc: "Müşteri kaybını (churn) minimize etmeyi başardın." },
   'patron_mode': { name: "Patron Modu", desc: "Sanal asistan (VA) alarak operasyonları delege ettin." },
   'tycoon_status': { name: "AI TYCOON", desc: "Aylık $40,000 MRR hedefine ulaştın!" },
-  'kurt_satıcı': { name: "Kurt Satıcı", desc: "Demo Call görüşmesini başarıyla tamamladın." }
+  'kurt_satıcı': { name: "Kurt Satıcı", desc: "Demo Call görüşmesini başarıyla tamamladın." },
+  'yerel_fatih': {
+    name: 'Yerel Fatih',
+    desc: 'İlk TR müşterini kazan',
+    icon: '🏘️'
+  },
+  'global_oyuncu': {
+    name: 'Global Oyuncu',
+    desc: 'İlk INT müşteriyi kazan',
+    icon: '🌍'
+  }
 };
 
 const badgeMapping = {
   'template_builder': 'temel_hazir',
   'automation_wizard': 'otomasyon_sihirbazı',
   'kurt_satıcı': 'kurt_satıcı',
-  'tycoon_status': 'saas_visionary'
+  'tycoon_status': 'saas_visionary',
+  'yerel_fatih': 'yerel_fatih',
+  'global_oyuncu': 'global_oyuncu'
 };
 
 if (window.GAME_CONTENT && window.GAME_CONTENT.badges) {
@@ -519,10 +531,10 @@ function updateUI() {
   document.getElementById('agency-level').textContent = levelNumStr;
   document.getElementById('agency-title').textContent = getAgencyTitle(state.level);
   
-  document.getElementById('mrr-usd').textContent = `$${state.mrr.toLocaleString()}`;
+  animateCounter('mrr-usd', state.mrr, '$', 600);
   document.getElementById('mrr-tl').textContent = `${(state.mrr * state.exchangeRate).toLocaleString()} ₺`;
-  
-  document.getElementById('cash-reserve').textContent = `$${state.cash.toLocaleString()}`;
+
+  animateCounter('cash-reserve', state.cash, '$', 600);
 
   // Net Cash Flow update
   const expenses = getMonthlyExpenses();
@@ -578,6 +590,38 @@ function updateUI() {
   if (totalClientsLabel) {
     totalClientsLabel.textContent = totalClients;
   }
+
+  // Objective HUD güncelle
+  const objectiveEl = document.getElementById('current-objective');
+  if (objectiveEl && levels && levels[state.level]) {
+    objectiveEl.textContent = levels[state.level].goal || levels[state.level].description || 'Hedef tamamlandı';
+  }
+
+  // Progress Rail güncelle
+  for (let i = 0; i <= 7; i++) {
+    const node = document.getElementById(`rail-node-${i}`);
+    const step = document.getElementById(`rail-step-${i}`);
+    if (node) {
+      node.classList.remove('active', 'completed');
+      if (i < state.level) {
+        node.classList.add('completed');
+      } else if (i === state.level) {
+        node.classList.add('active');
+      }
+    }
+    if (step && i < 7) {
+      step.classList.remove('completed');
+      if (i < state.level) {
+        step.classList.add('completed');
+      }
+    }
+  }
+
+  // Demo queue widget güncelle
+  const demoTrEl = document.getElementById('demo-queue-tr');
+  const demoIntEl = document.getElementById('demo-queue-int');
+  if (demoTrEl) demoTrEl.textContent = state.demoQueue ? (state.demoQueue.tr || 0) : 0;
+  if (demoIntEl) demoIntEl.textContent = state.demoQueue ? (state.demoQueue.int || 0) : 0;
 }
 
 // Update the mini achievement grid (4 slots)
@@ -676,6 +720,20 @@ function showLevelUpModal(lvl) {
   modal.classList.add('active');
 }
 
+// Command Registry — maps command strings to handler functions, minimum level, and description
+const COMMAND_REGISTRY = {
+  'help':               { fn: showHelp,            minLevel: 0, desc: 'Bu yardım menüsünü görüntüler.' },
+  'status':             { fn: showStatus,           minLevel: 0, desc: 'Ajansın güncel durum detaylarını yazdırır.' },
+  'outbound-templates': { fn: showTemplates,        minLevel: 0, desc: 'Outbound şablonlarını analiz eder.' },
+  'select-niche':       { fn: selectNicheCommand,   minLevel: 1, desc: 'Odaklanılacak sektörü seçer. Seçenekler: local-service, ecommerce, b2b-saas' },
+  'automate-ops':       { fn: automateOpsCommand,   minLevel: 0, desc: 'Otomasyon/şablon kurar.' },
+  'send-outbound':      { fn: sendOutboundCommand,  minLevel: 3, desc: 'Kampanya başlatır. (Maliyet: tr=$50, int=$150, ikisi=$200)' },
+  'run-demo-call':      { fn: runDemoCallCommand,   minLevel: 3, desc: 'Bekleyen demo görüşmelerini başlatır.' },
+  'hire-va':            { fn: hireVaCommand,         minLevel: 6, desc: 'Sanal asistan işe alır. (Maliyet: $500 kurulum, +$500/ay)' },
+  'next-month':         { fn: nextMonthCommand,      minLevel: 0, desc: 'Sonraki aya geçer. Gelir/giderleri işletir, seviye atlatır.' },
+  'clear':              { fn: () => term.clear(),    minLevel: 0, desc: 'Terminal ekranını temizler.' },
+};
+
 // Game Commands Parser
 async function parseCommand(rawInput) {
   const input = rawInput.trim();
@@ -699,64 +757,27 @@ async function parseCommand(rawInput) {
   const cmd = parts[0].toLowerCase();
   const args = parts.slice(1);
 
-  switch (cmd) {
-    case 'help':
-      await showHelp();
-      break;
-    case 'status':
-      await showStatus();
-      break;
-    case 'outbound-templates':
-      await showTemplates();
-      break;
-    case 'select-niche':
-      await selectNicheCommand(args);
-      break;
-    case 'automate-ops':
-      await automateOpsCommand();
-      break;
-    case 'send-outbound':
-      await sendOutboundCommand(args);
-      break;
-    case 'run-demo-call':
-      await runDemoCallCommand(args);
-      break;
-    case 'hire-va':
-      await hireVaCommand();
-      break;
-    case 'next-month':
-      await nextMonthCommand();
-      break;
-    case 'clear':
-      term.clear();
-      break;
-    default:
-      await term.print(`Hata: Bilinmeyen komut "${cmd}". Kullanılabilir komutları görmek için "help" yazın.`, 'error');
+  const entry = COMMAND_REGISTRY[cmd];
+  if (!entry) {
+    await term.print(`Hata: Bilinmeyen komut "${cmd}". Kullanılabilir komutları görmek için "help" yazın.`, 'error');
+  } else if (state.level < entry.minLevel) {
+    await term.print(`Hata: Bu komut henüz mevcut değil (gereken seviye: ${entry.minLevel}, mevcut: ${state.level}).`, 'error');
+  } else {
+    await entry.fn(args);
   }
 
   recalculateMRR();
   calculateWorkingHours();
   updateUI();
+  saveGame();
 }
 
 async function showHelp() {
-  const helpText = [
-    "=== KULLANILABİLİR KOMUTLAR ===",
-    "help                           : Bu yardım menüsünü görüntüler.",
-    "status                         : Ajansın güncel durum detaylarını yazdırır.",
-    "select-niche [niche-id]        : Odaklanılacak sektörü seçer (Level 1'de).",
-    "                                 Seçenekler: local-service, ecommerce, b2b-saas",
-    "automate-ops                   : Otomasyon/şablon kurar (Lvl 0: $100 | Lvl 2: $150 | Lvl 4: $300).",
-    "send-outbound [tr|int]         : Kampanya başlatır. (Lvl 3+, Maliyet: tr=$50, int=$150, ikisi=$200).",
-    "run-demo-call [tr|int]         : Bekleyen demo görüşmelerini başlatır (Lvl 3+, Maliyet: Ücretsiz).",
-    "outbound-templates             : Başarılı ve başarısız outbound şablonlarını analiz eder.",
-    "hire-va                        : Sanal asistan işe alır (Lvl 6, Maliyet: $500 kurulum, +$500/ay).",
-    "next-month                     : Sonraki aya geçer. Gelir/giderleri işletir, seviye atlatır.",
-    "clear                          : Terminal ekranını temizler."
-  ];
-
-  for (const line of helpText) {
-    await term.print(line, 'system');
+  await term.print("=== KULLANILABİLİR KOMUTLAR ===", 'system');
+  for (const [cmd, entry] of Object.entries(COMMAND_REGISTRY)) {
+    if (entry.minLevel > state.level) continue;
+    const padded = cmd.padEnd(22);
+    await term.print(`${padded}: ${entry.desc}`, 'system');
   }
 }
 
@@ -1005,13 +1026,13 @@ async function hireVaCommand() {
   unlockBadge('patron_mode');
 }
 
-// Next Month Command - Core progression and financial calculations
-async function nextMonthCommand() {
-  // 1. Level transition checks
+// Sub-function 1: Level-up transition checks (levels 0–6 → 7)
+// Returns true if a level-up was handled and further month processing should stop.
+async function tryLevelUp(totalClients) {
   if (state.level === 0) {
     if (!state.templatesCreated) {
       await term.print("Level 1'e geçiş başarısız. Önce `automate-ops` ile şablonlarınızı hazırlayın.", "error");
-      return;
+      return true;
     }
     state.level = 1;
     await term.print("Tebrikler! Level 1: NİŞ SEÇİMİ aşamasına geçtiniz.", "success");
@@ -1019,13 +1040,13 @@ async function nextMonthCommand() {
     triggerConfetti();
     showLevelUpModal(1);
     unlockBadge('template_builder');
-    return;
+    return true;
   }
 
   if (state.level === 1) {
     if (!state.currentNiche) {
       await term.print("Level 2'ye geçiş başarısız. Önce `select-niche` ile bir odak sektörü seçmelisiniz.", "error");
-      return;
+      return true;
     }
     state.level = 2;
     await term.print("Tebrikler! Level 2: HİZMET TANIMLAMA aşamasına geçtiniz.", "success");
@@ -1033,13 +1054,13 @@ async function nextMonthCommand() {
     triggerConfetti();
     showLevelUpModal(2);
     unlockBadge('niche_master');
-    return;
+    return true;
   }
 
   if (state.level === 2) {
     if (!state.serviceDefined) {
       await term.print("Level 3'e geçiş başarısız. Önce `automate-ops` ile hizmet paketlerini tanımlamalısınız.", "error");
-      return;
+      return true;
     }
     state.level = 3;
     await term.print("Tebrikler! Level 3: MÜŞTERİ YAKALAMA (Outbound) aşamasına geçtiniz.", "success");
@@ -1047,14 +1068,8 @@ async function nextMonthCommand() {
     await term.print("Bir sonraki seviyeye geçmek için en az 1 müşteriye sahip olmalısınız.", "system");
     triggerConfetti();
     showLevelUpModal(3);
-    return;
+    return true;
   }
-
-  const totalClients = 
-    state.clients.trStandard + 
-    state.clients.trPremium + 
-    state.clients.intStandard + 
-    state.clients.intPremium;
 
   if (state.level === 3) {
     if (totalClients >= 1) {
@@ -1067,9 +1082,10 @@ async function nextMonthCommand() {
     } else {
       await term.print("Bilgi: Level 4'e geçmek için en az 1 müşteri kazanmış olmalısınız. Outbound yapın ve demoları tamamlayın.", "system");
     }
+    return false;
   }
 
-  else if (state.level === 4) {
+  if (state.level === 4) {
     if (state.operationsAutomated) {
       state.level = 5;
       await term.print("Tebrikler! Level 5: DELIVERY & RETENTION aşamasına geçtiniz.", "success");
@@ -1080,9 +1096,10 @@ async function nextMonthCommand() {
     } else {
       await term.print("Bilgi: Level 5'e geçmek için operasyonel otomasyonu kurmalısınız. `automate-ops` komutunu çalıştırın.", "system");
     }
+    return false;
   }
 
-  else if (state.level === 5) {
+  if (state.level === 5) {
     if (totalClients >= 10) {
       state.level = 6;
       await term.print("Tebrikler! Level 6: SCALE TO 30 CLIENTS aşamasına geçtiniz.", "success");
@@ -1092,9 +1109,10 @@ async function nextMonthCommand() {
     } else {
       await term.print(`Bilgi: Level 6'ya geçebilmek için en az 10 müşteriye ulaşmalısınız. Güncel müşteri: ${totalClients}/10`, "system");
     }
+    return false;
   }
 
-  else if (state.level === 6) {
+  if (state.level === 6) {
     if (state.mrr >= 40000 || totalClients >= 30) {
       state.level = 7;
       state.inEndDecision = true;
@@ -1106,17 +1124,21 @@ async function nextMonthCommand() {
       await term.print("- team    : Ekip kurup büyüt, ajansı kurumsallaştır ($80K-$150K MRR hedefi).", "dialogue-option");
       await term.print("- saas    : Hizmeti yazılıma dönüştür (SaaS pivot, yüksek çarpanlı exit hedefi).", "dialogue-option");
       await term.print("Lütfen kararınızı yazın (sustain / team / saas):", "input");
-      
       triggerConfetti();
       showLevelUpModal(7);
       unlockBadge('tycoon_status');
-      return;
+      return true;
     } else {
       await term.print(`Hedef henüz tamamlanmadı. Level 7 için $40,000 MRR veya 30 müşteri gerekiyor. Güncel MRR: $${state.mrr.toLocaleString()}, Müşteri: ${totalClients}`, "system");
     }
+    return false;
   }
 
-  // Process Month Transition logic (Financials, Churn, Burnout)
+  return false;
+}
+
+// Sub-function 2: Process monthly financials (income and expenses)
+async function processFinancials() {
   await term.print(`\n=== AY ${state.month} ÖZETİ VE RAPORU ===`, "system");
 
   // Cash Inflow
@@ -1128,8 +1150,10 @@ async function nextMonthCommand() {
   state.cash -= expenses;
   await term.print(`- Giderler (Yazılım/VA): -$${expenses.toLocaleString()}`, "error");
   await term.print(`Net Nakit Bakiye: $${state.cash.toLocaleString()}`, "system");
+}
 
-  // Retention & Churn processing (Level 5+)
+// Sub-function 3: Process churn, referrals, and upsell (Level 5+)
+async function processChurnUpsell(totalClients) {
   if (state.level >= 5 && totalClients > 0) {
     const currentNicheData = niches[state.currentNiche];
     let churnProb = currentNicheData.churnRate.manual;
@@ -1137,13 +1161,13 @@ async function nextMonthCommand() {
     if (state.vaHired) churnProb = currentNicheData.churnRate.va;
 
     let lostClientsCount = 0;
-    
+
     // Check churn for each client category
     ['trStandard', 'trPremium', 'intStandard', 'intPremium'].forEach(type => {
       const count = state.clients[type];
       for (let i = 0; i < count; i++) {
         if (Math.random() < churnProb) {
-          state.clients[type]--;
+          state.clients[type] = Math.max(0, state.clients[type] - 1);
           lostClientsCount++;
         }
       }
@@ -1155,6 +1179,17 @@ async function nextMonthCommand() {
     } else {
       await term.print(`+ Churn Raporu: Mükemmel hizmet kalitesi! Bu ay hiç müşteri kaybetmediniz.`, "success");
       unlockBadge('retention_pro');
+    }
+
+    // Referral mekanizması
+    const totalClientsForReferral = Object.values(state.clients).reduce((a, b) => a + b, 0);
+    if (totalClientsForReferral > 0) {
+      const referralChance = totalClientsForReferral * 0.03;
+      if (Math.random() < referralChance) {
+        if (!state.demoQueue) state.demoQueue = { tr: 0, int: 0 };
+        state.demoQueue.tr = (state.demoQueue.tr || 0) + 1;
+        await term.print('📣 Referral: Mevcut müşteriniz sizi bir iş arkadaşına önerdi! TR demo kuyruğuna +1 eklendi.', 'success');
+      }
     }
 
     // Upsell logic (Level 5+) - 10% chance to upgrade Standard to Premium
@@ -1170,10 +1205,13 @@ async function nextMonthCommand() {
     }
     recalculateMRR();
   }
+}
 
-  // Burnout and Hours recalculation
+// Sub-function 4: Process burnout, game-over checks
+// Returns true if game over (disableInput was called), false otherwise.
+async function processBurnoutGameOver() {
   calculateWorkingHours();
-  
+
   if (state.workingHours > 40) {
     const addedBurnout = Math.round((state.workingHours - 40) * 1.5);
     state.burnout += addedBurnout;
@@ -1191,7 +1229,7 @@ async function nextMonthCommand() {
     await term.print("OYUN BİTTİ (KAYBETTİNİZ). Yeniden oynamak için sayfayı yenileyin.", "error");
     state.gameCompleted = true;
     disableInput();
-    return;
+    return true;
   }
 
   if (state.cash < 0) {
@@ -1200,13 +1238,35 @@ async function nextMonthCommand() {
     await term.print("OYUN BİTTİ (KAYBETTİNİZ). Yeniden oynamak için sayfayı yenileyin.", "error");
     state.gameCompleted = true;
     disableInput();
+    return true;
+  }
+
+  return false;
+}
+
+// Next Month Command - Core progression and financial calculations
+async function nextMonthCommand() {
+  const totalClients =
+    state.clients.trStandard +
+    state.clients.trPremium +
+    state.clients.intStandard +
+    state.clients.intPremium;
+
+  const levelUpDone = await tryLevelUp(totalClients);
+  if (levelUpDone) {
+    recalculateMRR();
+    calculateWorkingHours();
+    updateUI();
     return;
   }
 
-  // Reset monthly single action limits
+  await processFinancials();
+  await processChurnUpsell(totalClients);
+  const gameOver = await processBurnoutGameOver();
+  if (gameOver) return;
+
   state.outboundSentThisMonth = false;
   state.month++;
-
   await term.print(`Yeni Ay (Ay ${state.month}) başladı. Yol haritasındaki adımları takip etmeye devam edin!`, "system");
   recalculateMRR();
   calculateWorkingHours();
@@ -1219,15 +1279,42 @@ function startDemoCall(clientType, lang) {
   state.demoCallScore = 0;
   state.demoCallClientType = clientType;
 
-  const dialogueSource = (window.GAME_CONTENT && window.GAME_CONTENT.demoCallDialog) 
-    ? window.GAME_CONTENT.demoCallDialog 
+  // Persona seçimi
+  let selectedPersona = null;
+  let demoStartNode = 'greeting';
+  if (window.GAME_CONTENT && window.GAME_CONTENT.clientPersonas) {
+    const personaKeys = Object.keys(window.GAME_CONTENT.clientPersonas);
+    const randomKey = personaKeys[Math.floor(Math.random() * personaKeys.length)];
+    selectedPersona = window.GAME_CONTENT.clientPersonas[randomKey];
+    const isIntClient = (clientType === 'intStandard' || clientType === 'intPremium');
+    term.print(`👤 Müşteri profili: ${isIntClient ? (selectedPersona.hintEN || selectedPersona.hint) : selectedPersona.hint}`, 'system');
+    if (selectedPersona.startingNode && selectedPersona.startingNode !== 'greeting') {
+      const dialogueSourceCheck = (window.GAME_CONTENT && window.GAME_CONTENT.demoCallDialog)
+        ? window.GAME_CONTENT.demoCallDialog
+        : null;
+      if (dialogueSourceCheck && dialogueSourceCheck.nodes && dialogueSourceCheck.nodes[selectedPersona.startingNode]) {
+        demoStartNode = selectedPersona.startingNode;
+      }
+    }
+  }
+
+  const dialogueSource = (window.GAME_CONTENT && window.GAME_CONTENT.demoCallDialog)
+    ? window.GAME_CONTENT.demoCallDialog
     : null;
 
-  if (dialogueSource && dialogueSource.nodes && dialogueSource.nodes['greeting']) {
+  if (dialogueSource && dialogueSource.nodes && dialogueSource.nodes[demoStartNode]) {
+    state.demoCallStep = demoStartNode;
+  } else if (dialogueSource && dialogueSource.nodes && dialogueSource.nodes['greeting']) {
     state.demoCallStep = 'greeting';
   } else {
     state.demoCallStep = 0;
   }
+
+  // Demo modu prompt indikatörü
+  const prompt = document.querySelector('.terminal-prompt');
+  const inputLine = document.querySelector('.terminal-input-line');
+  if (prompt) prompt.classList.add('dialogue-mode');
+  if (inputLine) inputLine.classList.add('dialogue-active');
 
   // Render the first step of dialogue
   renderDemoCallStep();
@@ -1271,6 +1358,10 @@ async function handleDemoCallDialogue(input) {
       state.demoQueue.int = Math.max(0, state.demoQueue.int - 1);
     }
     state.inDemoCall = false;
+    const promptCancel = document.querySelector('.terminal-prompt');
+    const inputLineCancel = document.querySelector('.terminal-input-line');
+    if (promptCancel) promptCancel.classList.remove('dialogue-mode');
+    if (inputLineCancel) inputLineCancel.classList.remove('dialogue-active');
     updateUI();
     return;
   }
@@ -1301,6 +1392,10 @@ async function handleDemoCallDialogue(input) {
 
     if (nextNode && nextNode.isEnd) {
       state.inDemoCall = false;
+      const promptEnd = document.querySelector('.terminal-prompt');
+      const inputLineEnd = document.querySelector('.terminal-input-line');
+      if (promptEnd) promptEnd.classList.remove('dialogue-mode');
+      if (inputLineEnd) inputLineEnd.classList.remove('dialogue-active');
       await term.print(`\n${nextNode.message}`, nextNode.success ? 'success' : 'error');
 
       if (nextNode.success) {
@@ -1356,6 +1451,10 @@ async function handleDemoCallDialogue(input) {
       renderDemoCallStep();
     } else {
       state.inDemoCall = false;
+      const promptFallbackEnd = document.querySelector('.terminal-prompt');
+      const inputLineFallbackEnd = document.querySelector('.terminal-input-line');
+      if (promptFallbackEnd) promptFallbackEnd.classList.remove('dialogue-mode');
+      if (inputLineFallbackEnd) inputLineFallbackEnd.classList.remove('dialogue-active');
       if (state.demoCallScore >= 20) {
         state.clients[state.demoCallClientType]++;
         await term.print("\n[BAŞARILI] Harika görüşme! Müşteri teklifimizi onayladı.", "success");
@@ -1432,12 +1531,201 @@ function disableInput() {
     inputEl.disabled = true;
     inputEl.placeholder = "Oyun sonlandı.";
   }
+
+  // Game Over Modal göster
+  const modal = document.getElementById('game-over-modal');
+  const titleEl = document.getElementById('game-over-title');
+  const subtitleEl = document.getElementById('game-over-subtitle');
+  const reasonEl = document.getElementById('game-over-reason');
+  const iconEl = document.getElementById('game-over-icon');
+  const shareBtn = document.getElementById('game-over-share-btn');
+
+  if (modal) {
+    const isWin = state.mrr >= 40000 && state.clients &&
+                  (Object.values(state.clients).reduce((a,b) => a+b, 0) >= 30);
+    const isBurnout = state.burnout >= 100;
+    const isBankrupt = state.cash < 0;
+
+    if (iconEl) iconEl.textContent = isWin ? '🏆' : isBurnout ? '🔥' : '💸';
+    if (titleEl) {
+      titleEl.textContent = isWin ? 'VICTORY!' : 'GAME OVER';
+      titleEl.style.color = isWin ? 'var(--neon-green)' : 'var(--neon-pink)';
+    }
+    if (subtitleEl) {
+      subtitleEl.textContent = isWin ? '$40K MRR • 30 MÜŞTERİ' :
+                                isBurnout ? 'BURNOUT %100' : 'NAKİT TÜKENDİ';
+    }
+    if (reasonEl) {
+      reasonEl.textContent = isWin
+        ? `Tebrikler! ${state.month} ayda ajansınızı zirveye taşıdınız. Seçilen niş: ${state.currentNiche || 'belirsiz'}.`
+        : isBurnout
+        ? 'Çok fazla çalıştınız. Otomasyon ve VA desteğini zamanında almak hayatta kalmanın anahtarıdır.'
+        : 'Nakit rezerviniz tükendi. Daha erken müşteri kazanmak ve giderleri kontrol etmek gerekiyordu.';
+    }
+    if (shareBtn) shareBtn.style.display = isWin ? 'inline-flex' : 'none';
+
+    modal.classList.add('active');
+
+    // Share butonu handler
+    if (shareBtn && isWin) {
+      shareBtn.onclick = () => generateShareCard();
+    }
+  }
+}
+
+// LocalStorage Kayıt Sistemi
+function saveGame() {
+  try {
+    const snapshot = {
+      version: 1,
+      timestamp: Date.now(),
+      state: JSON.parse(JSON.stringify(state))
+    };
+    localStorage.setItem('ai_agency_tycoon_v1', JSON.stringify(snapshot));
+  } catch (e) {
+    console.warn('Oyun kaydedilemedi:', e);
+  }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem('ai_agency_tycoon_v1');
+    if (!raw) return false;
+    const snapshot = JSON.parse(raw);
+    if (!snapshot || snapshot.version !== 1) return false;
+    Object.assign(state, snapshot.state);
+    return true;
+  } catch (e) {
+    console.warn('Kayıt yüklenemedi:', e);
+    return false;
+  }
+}
+
+// Animasyonlu Sayaç
+function animateCounter(elementId, targetValue, prefix, duration) {
+  prefix = prefix || '$';
+  duration = duration || 700;
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const startValue = parseInt(el.textContent.replace(/[^0-9]/g, '')) || 0;
+  if (startValue === targetValue) return;
+  const startTime = performance.now();
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(startValue + (targetValue - startValue) * eased);
+    el.textContent = prefix + current.toLocaleString('tr-TR');
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// Paylaşılabilir Sonuç Kartı
+function generateShareCard() {
+  try {
+    const canvas = document.getElementById('share-card-canvas');
+    if (!canvas) return;
+    canvas.width = 600;
+    canvas.height = 340;
+    const ctx = canvas.getContext('2d');
+
+    // Arka plan
+    ctx.fillStyle = '#0a0f1a';
+    ctx.fillRect(0, 0, 600, 340);
+
+    // Neon çerçeve
+    ctx.strokeStyle = '#00ff66';
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#00ff66';
+    ctx.strokeRect(8, 8, 584, 324);
+    ctx.shadowBlur = 0;
+
+    // Başlık
+    ctx.fillStyle = '#00ff66';
+    ctx.font = 'bold 22px monospace';
+    ctx.textAlign = 'center';
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#00ff66';
+    ctx.fillText('AI AGENCY TYCOON', 300, 55);
+    ctx.shadowBlur = 0;
+
+    // Alt başlık
+    ctx.fillStyle = '#00e5ff';
+    ctx.font = '13px monospace';
+    ctx.fillText('— TAMAMLANDI —', 300, 80);
+
+    // Metrikler
+    const totalClients = state.clients ? Object.values(state.clients).reduce((a,b)=>a+b,0) : 0;
+    const badges = state.badges ? state.badges.length : 0;
+    const metrics = [
+      ['💰 AYLIK GELİR (MRR)', '$' + (state.mrr || 0).toLocaleString()],
+      ['👥 AKTİF MÜŞTERİ', totalClients + ' müşteri'],
+      ['📅 GEÇEN AY', (state.month || 1) + '. ay'],
+      ['🎯 NİŞ', state.currentNiche || 'Belirsiz'],
+      ['🏆 ROZET', badges + ' kazanıldı'],
+    ];
+
+    ctx.textAlign = 'left';
+    metrics.forEach(([label, value], i) => {
+      const y = 120 + i * 38;
+      ctx.fillStyle = '#4a7a8a';
+      ctx.font = '11px monospace';
+      ctx.fillText(label, 40, y);
+      ctx.fillStyle = '#e0e0e0';
+      ctx.font = 'bold 15px monospace';
+      ctx.fillText(value, 40, y + 18);
+    });
+
+    // Hashtag
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffb700';
+    ctx.font = '12px monospace';
+    ctx.fillText('#AIAgencyTycoon  •  aiagencytycoon.netlify.app', 300, 315);
+
+    // İndir
+    const link = document.createElement('a');
+    link.download = 'ai-agency-tycoon-sonuc.png';
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    if (typeof term !== 'undefined') {
+      term.print('📸 Sonuç kartı indirildi! #AIAgencyTycoon ile paylaş.', 'success');
+    }
+  } catch (e) {
+    console.error('Kart oluşturulamadı:', e);
+  }
 }
 
 // Initial Game Setup
 window.addEventListener('DOMContentLoaded', () => {
   // Initialize Terminal
   term = new TerminalManager('terminal-output');
+
+  // Kayıtlı oyunu yükle
+  if (loadGame()) {
+    term.print('💾 Kayıtlı oyun yüklendi. Kaldığınız yerden devam ediyorsunuz.', 'success');
+  }
+
+  // Canlı döviz kuru
+  (async () => {
+    try {
+      const res = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (res.ok) {
+        const data = await res.json();
+        const tryRate = data.rates && data.rates.TRY;
+        if (tryRate && tryRate > 1) {
+          state.exchangeRate = Math.round(tryRate);
+          console.log(`Döviz kuru güncellendi: 1 USD = ${state.exchangeRate} TL`);
+        }
+      }
+    } catch (e) {
+      console.warn('Döviz kuru alınamadı, varsayılan kullanılıyor:', e);
+    }
+  })();
 
   // Initialize AudioManager Visualizer and Button Controllers
   if (typeof audioManager !== 'undefined') {

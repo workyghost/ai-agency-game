@@ -40,6 +40,24 @@
             </div>
         </header>
 
+        <div class="progress-rail" id="progress-rail">
+          <div class="rail-node" id="rail-node-0" title="Level 0: Hazırlık"></div>
+          <div class="rail-step" id="rail-step-0"></div>
+          <div class="rail-node" id="rail-node-1" title="Level 1: Niş Seçimi"></div>
+          <div class="rail-step" id="rail-step-1"></div>
+          <div class="rail-node" id="rail-node-2" title="Level 2: İlk Müşteri"></div>
+          <div class="rail-step" id="rail-step-2"></div>
+          <div class="rail-node" id="rail-node-3" title="Level 3: Outbound"></div>
+          <div class="rail-step" id="rail-step-3"></div>
+          <div class="rail-node" id="rail-node-4" title="Level 4: Otomasyon"></div>
+          <div class="rail-step" id="rail-step-4"></div>
+          <div class="rail-node" id="rail-node-5" title="Level 5: Retention"></div>
+          <div class="rail-step" id="rail-step-5"></div>
+          <div class="rail-node" id="rail-node-6" title="Level 6: VA & Ölçeklenme"></div>
+          <div class="rail-step" id="rail-step-6"></div>
+          <div class="rail-node" id="rail-node-7" title="Level 7: Karar Anı 🏆"></div>
+        </div>
+
         <!-- Main Workspace Grid -->
         <main class="workspace-grid">
             
@@ -51,6 +69,10 @@
                 </div>
                 
                 <div class="panel-content">
+                    <div class="objective-bar">
+                      <span class="objective-label"><i class="fa-solid fa-crosshairs"></i> HEDEF</span>
+                      <span class="objective-text" id="current-objective">Hazırlıklarını tamamla...</span>
+                    </div>
                     <!-- Core Stats Grid -->
                     <div class="metrics-grid">
                         <div class="metric-card level-card">
@@ -109,6 +131,16 @@
                                 <span class="client-label">Global Premium</span>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="demo-queue-widget glass-card" style="margin-top: 10px; padding: 10px 14px;">
+                      <div style="font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 6px;">
+                        <i class="fa-solid fa-phone"></i> BEKLEYEN DEMOLAR
+                      </div>
+                      <div style="display: flex; gap: 15px; font-size: 0.85rem;">
+                        <span>🇹🇷 TR: <span id="demo-queue-tr" style="color: var(--neon-green);">0</span></span>
+                        <span>🌍 INT: <span id="demo-queue-int" style="color: var(--neon-blue);">0</span></span>
+                      </div>
                     </div>
 
                     <!-- Badges / Achievements Grid -->
@@ -190,6 +222,24 @@
             </div>
             <button id="level-up-close-btn" class="cyber-btn">ACKNOWLEDGE</button>
         </div>
+    </div>
+
+    <div id="game-over-modal" class="modal-overlay" style="display:none;">
+      <div class="modal-content glass-card" style="max-width: 440px; padding: 40px; text-align: center; border-color: var(--neon-pink); box-shadow: 0 0 40px rgba(255,42,95,0.3);">
+        <div id="game-over-icon" style="font-size: 3.5rem; margin-bottom: 15px;">💀</div>
+        <h2 id="game-over-title" style="font-size: 2rem; letter-spacing: 4px; margin-bottom: 12px; color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink);">GAME OVER</h2>
+        <p id="game-over-subtitle" style="font-size: 1rem; color: var(--neon-yellow); margin-bottom: 8px; letter-spacing: 2px;"></p>
+        <p id="game-over-reason" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px; line-height: 1.6;"></p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <button onclick="location.reload()" class="cyber-btn" id="game-over-restart-btn">
+            <i class="fa-solid fa-rotate-right"></i> YENİDEN BAŞLAT
+          </button>
+          <button id="game-over-share-btn" class="cyber-btn" style="border-color: var(--neon-green); color: var(--neon-green); display: none;">
+            <i class="fa-solid fa-share-nodes"></i> SONUCU PAYLAŞ
+          </button>
+        </div>
+        <canvas id="share-card-canvas" style="display:none;" width="600" height="350"></canvas>
+      </div>
     </div>
 
     <!-- BADGES DETAIL MODAL -->

@@ -116,9 +116,9 @@ class AudioManager {
   }
 
   // Trigger synthesized Sound Effects
-  playSFX(type) {
+  async playSFX(type) {
     if (!this.sfxEnabled) return;
-    this.resume(); // Ensure context is active
+    await this.resume(); // Ensure context is active
 
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
@@ -458,6 +458,9 @@ class AudioManager {
   /* RETRO SPECTRUM ANALYSER DRAWING */
 
   startVisualizerLoop() {
+    const bufferLength = this.analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
     const draw = () => {
       if (!this.isPlayingMusic || !this.vizCtx || !this.vizCanvas) return;
 
@@ -465,10 +468,8 @@ class AudioManager {
 
       const width = this.vizCanvas.width;
       const height = this.vizCanvas.height;
-      
+
       // Retrieve frequency data from analyser node
-      const bufferLength = this.analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
       this.analyser.getByteFrequencyData(dataArray);
 
       // Clear visualizer background with slight transparency for a neon trail effect
